@@ -300,7 +300,7 @@ Please ensure:
 
 ## Security
 
-If you discover a security vulnerability, please email security@vulnscan.dev instead of using the issue tracker.
+If you discover a security vulnerability, please email cyberboy25plus@gmail.com instead of using the issue tracker.
 
 ## License
 
