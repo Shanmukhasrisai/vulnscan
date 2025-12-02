@@ -1,5 +1,4 @@
 # VulnScan
-
 ## Enterprise-Grade API Penetration Testing Platform
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/downloads/)
@@ -48,20 +47,24 @@ VulnScan stands apart from generic vulnerability scanners through its specialize
 **SOAP API Testing**
 - WSDL analysis and operation enumeration
 - XML injection and XXE (XML External Entity) detection
-- SOAP header manipulation vulnerabilities
-- WS-Addressing and WS-Security bypass testing
+- WS-Security authentication bypass
+- SOAP action spoofing detection
 
-**gRPC & Protocol Buffers**
-- Service enumeration and method discovery
-- Channel hijacking and MITM vulnerability detection
-- Serialization bypass attacks
+**gRPC Security**
+- Protocol buffer fuzzing
+- Authentication and interceptor testing
+- Message tampering detection
+- Unary and streaming RPC vulnerability scanning
 
-**WebSocket & Real-Time APIs**
-- Message tampering and injection testing
-- Session hijacking vulnerability detection
-- Protocol downgrade attacks
+**WebSocket Testing**
+- Real-time message injection
+- Connection hijacking and session fixation
+- Cross-site WebSocket hijacking (CSWSH)
+- Message-level authentication bypass
 
 #### Core Vulnerability Detection
+
+VulnScan detects API vulnerabilities including **OWASP API Security Top 10** and various **Common Vulnerabilities and Exposures (CVEs)**:
 
 - **SQL Injection**: Multi-database detection (MySQL, PostgreSQL, Oracle, MSSQL)
 - **NoSQL Injection**: MongoDB, CouchDB, and other NoSQL query injection
@@ -73,253 +76,165 @@ VulnScan stands apart from generic vulnerability scanners through its specialize
 - **Authentication Bypass**: Broken authentication, missing authorization, privilege escalation
 - **Insecure Deserialization**: Object injection and gadget chain attacks
 - **API Key Exposure**: Hardcoded credentials and token leakage detection
-- **CVE Detection**: Automated scanning for known vulnerabilities with CVSS scoring
+- **OWASP Top 10 Coverage**: Comprehensive detection of OWASP API Security Top 10 vulnerabilities
+- **CVE Detection**: Automated scanning for known vulnerabilities with CVSS scoring and impact assessment
 
 ### Customizable Templates
 
-VulnScan includes pre-built templates for common security testing scenarios:
+**Template System**
+- YAML-based vulnerability definition format
+- Support for complex multi-step attack chains
+- Custom payload libraries and mutation strategies
+- Conditional logic and dynamic variable substitution
 
+**Pre-Built Templates**
+- 500+ curated vulnerability templates
+- Industry-specific security checks (healthcare, finance, e-commerce)
+- Compliance-focused templates (PCI-DSS, HIPAA, GDPR)
+- Active community template repository
+
+**Custom Template Development**
 ```yaml
-# Example: REST API Template
-template_name: "REST API Security Assessment"
-description: "Comprehensive REST API penetration testing"
-scope:
-  protocols: ["HTTP", "HTTPS"]
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+template:
+  name: "Custom API Authentication Bypass"
+  severity: high
+  protocol: rest
   
-tests:
-  - id: "auth_bypass"
-    enabled: true
-    intensity: "medium"
-    
-  - id: "injection_testing"
-    enabled: true
-    payloads:
-      - type: "sql_injection"
-      - type: "command_injection"
-      - type: "xpath_injection"
+  requests:
+    - method: POST
+      path: "/api/auth/login"
+      headers:
+        Content-Type: "application/json"
+      body: |
+        {"username": "{{username}}", "password": "{{payload}}"}
       
-  - id: "api_enumeration"
-    enabled: true
-    options:
-      brute_force_wordlist: "api_endpoints.txt"
-      
-reporting:
-  format: "html"
-  include_remediation: true
-  severity_threshold: 4.0
+  payloads:
+    - "' OR '1'='1"
+    - "admin' --"
+    - "{\"$ne\": null}"
+  
+  detection:
+    - status_code: 200
+    - response_contains: "token"
+    - response_time: "<500ms"
 ```
-
-### Multi-Protocol Support in Action
-
-**Example: Testing Multiple API Types**
-
-```python
-from vulnscan import VulnScanner, ScanConfig
-
-# Initialize scanner with multi-protocol configuration
-config = ScanConfig(
-    target_url="https://api.example.com",
-    protocols=["rest", "graphql", "grpc"],
-    authentication={
-        "type": "bearer_token",
-        "token": "your_jwt_token_here"
-    },
-    concurrency=20,
-    timeout=30
-)
-
-scanner = VulnScanner(config)
-
-# Scan all API endpoints
-results = scanner.scan_endpoints(
-    fuzzing_intensity="aggressive",
-    include_authentication_tests=True,
-    include_rate_limiting_tests=True
-)
-
-# Generate comprehensive report
-scanner.generate_report(
-    output_format="html",
-    include_exploitation_chains=True,
-    cvss_scoring=True
-)
-```
-
-### Cloud Infrastructure Auditing
-
-VulnScan extends security testing to cloud environments:
-
-**AWS Security Assessment**
-```python
-from vulnscan.cloud import AWSAuditor
-
-auditor = AWSAuditor(
-    aws_access_key="YOUR_KEY",
-    aws_secret_key="YOUR_SECRET",
-    regions=["us-east-1", "eu-west-1"]
-)
-
-# Scan API Gateway endpoints
-gateway_results = auditor.audit_api_gateway()
-
-# Check Lambda function security
-lambda_results = auditor.audit_lambda_functions()
-
-# Audit RDS and database security
-db_results = auditor.audit_databases()
-```
-
-**Azure & GCP Support**
-- Azure API Management security assessment
-- Google Cloud API Gateway scanning
-- Service authentication vulnerability detection
-- Cloud storage access control analysis
 
 ---
 
 ## Installation & Quick Start
 
-### System Requirements
+**Prerequisites**
 - Python 3.8 or higher
-- Linux, macOS, or Windows
-- 2GB RAM minimum (4GB+ recommended for large-scale scanning)
+- pip package manager
+- Virtual environment (recommended)
 
-### Installation
-
-```bash
-pip install vulnscan
-```
-
-### Command-Line Usage
+**Installation**
 
 ```bash
-# Basic REST API scan
-vulnscan --target https://api.example.com --protocol rest
+# Clone the repository
+git clone https://github.com/Shanmukhasrisai/vulnscan.git
+cd vulnscan
 
-# GraphQL endpoint testing
-vulnscan --target https://api.example.com/graphql --protocol graphql
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Multi-protocol comprehensive scan
-vulnscan --target https://api.example.com \
-         --protocols rest,graphql,websocket \
-         --fuzzing-intensity aggressive \
-         --template "api_security_assessment.yaml"
+# Install dependencies
+pip install -r requirements.txt
 
-# Cloud infrastructure audit
-vulnscan --cloud aws --regions us-east-1,eu-west-1 --audit-apis
-
-# With authentication
-vulnscan --target https://api.example.com \
-         --auth-type bearer \
-         --auth-token "your_jwt_token" \
-         --output report.html
+# Install VulnScan
+pip install -e .
 ```
 
-### Python API Example
+**Quick Start - Basic Scan**
+
+```bash
+# Scan a single API endpoint
+vulnscan scan --url https://api.example.com/v1
+
+# Scan with custom template
+vulnscan scan --url https://api.example.com --template jwt-bypass
+
+# Advanced scan with authentication
+vulnscan scan \
+  --url https://api.example.com \
+  --header "Authorization: Bearer YOUR_TOKEN" \
+  --template full-audit \
+  --output report.json
+```
+
+**Python SDK Example**
 
 ```python
-from vulnscan import VulnScanner, ScanConfig
+from vulnscan import VulnScanner
+from vulnscan.templates import SQLInjectionTemplate
 
-# Configure scan
-config = ScanConfig(
+# Initialize scanner
+scanner = VulnScanner(
     target_url="https://api.example.com",
-    protocols=["rest", "graphql"],
-    authentication={
-        "type": "bearer_token",
-        "token": "jwt_token_here"
-    },
-    fuzzing_intensity="medium",
-    timeout=30,
-    threads=10
+    headers={"Authorization": "Bearer YOUR_TOKEN"},
+    timeout=30
 )
 
-# Create scanner instance
-scanner = VulnScanner(config)
+# Add templates
+scanner.add_template(SQLInjectionTemplate())
+scanner.add_template("owasp-top-10")
 
-# Execute comprehensive scan
-results = scanner.scan(
-    include_passive_recon=True,
-    include_active_testing=True,
-    include_authentication_tests=True
-)
+# Execute scan
+results = scanner.scan()
 
-# Access vulnerability findings
-for vulnerability in results.vulnerabilities:
-    print(f"[{vulnerability.severity}] {vulnerability.title}")
-    print(f"  Description: {vulnerability.description}")
-    print(f"  CVSS Score: {vulnerability.cvss_score}")
-    print(f"  Remediation: {vulnerability.remediation}")
-    print()
+# Process results
+for vuln in results.vulnerabilities:
+    print(f"Found: {vuln.name} - Severity: {vuln.severity}")
+    print(f"Location: {vuln.url}")
+    print(f"Recommendation: {vuln.remediation}")
+
+# Generate report
+report = results.generate_report(format="html")
+report.save("vulnerability_report.html")
 ```
 
 ---
 
 ## Advanced Configuration
 
-### Configuration File (config.yaml)
+**Configuration File (vulnscan.yaml)**
 
 ```yaml
-# VulnScan Configuration
+target:
+  url: "https://api.example.com"
+  base_path: "/api/v1"
+  
+authentication:
+  type: "oauth2"
+  credentials:
+    client_id: "your_client_id"
+    client_secret: "your_client_secret"
+  token_url: "https://auth.example.com/token"
 
-scan:
-  # Scan engine settings
-  threads: 20
+scanning:
+  threads: 10
   timeout: 30
-  max_retries: 3
-  user_agent: "VulnScanner/2.0 (Security Assessment)"
+  rate_limit: 100  # requests per second
+  user_agent: "VulnScan/1.0 Security Audit"
+  
+templates:
+  - "sql-injection"
+  - "xss-detection"
+  - "authentication-bypass"
+  - "api-security-owasp"
+  
+reporting:
+  output_format: ["json", "html", "pdf"]
+  severity_threshold: "medium"
+  include_false_positives: false
+  
+advanced:
   follow_redirects: true
   verify_ssl: true
-  proxy: null  # Set if using HTTP/HTTPS proxy
-
-api:
-  # API-specific testing configuration
-  protocols: ["rest", "graphql", "grpc"]
-  max_depth: 5
-  test_methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
-  fuzzing_intensity: "medium"  # low, medium, aggressive
-  payload_mutation: true
-  graphql_introspection: true
-  wsdl_discovery: true
-
-authentication:
-  # Authentication testing
-  test_jwt: true
-  test_oauth2: true
-  test_api_keys: true
-  test_basic_auth: true
-  test_mTLS: false
-
-fuzzing:
-  # Fuzzing engine configuration
-  enable_mutation: true
-  mutation_rate: 0.7
-  payload_database: "payloads/default"
-  custom_payloads: "payloads/custom"
-  encoding: ["utf8", "url", "html", "base64"]
-
-reporting:
-  # Report generation settings
-  format: "html"  # html, json, xml, pdf
-  include_screenshots: true
-  include_remediation: true
-  include_exploitation_chains: true
-  cvss_threshold: 4.0
-  export_jira: false
-  export_slack: false
-
-integrations:
-  # Third-party integrations
-  slack_webhook: null
-  jira_url: null
-  jira_project: null
-  github_issues: false
-  gitlab_issues: false
-
-cloud:
-  # Cloud infrastructure settings
-  providers: []
-  audit_apis: false
+  proxy: "http://proxy.example.com:8080"
+  custom_headers:
+    X-API-Version: "2.0"
   audit_storage: false
   check_metadata_service: false
 ```
@@ -329,6 +244,7 @@ cloud:
 ## Security Considerations
 
 ⚠️ **Legal Notice**: VulnScan is a penetration testing tool designed for authorized security assessments only. Only use this tool on:
+
 - Systems you own
 - Systems where you have explicit written authorization
 - Authorized penetration testing engagements
@@ -340,6 +256,7 @@ cloud:
 ## Contributing
 
 We welcome contributions from the security community! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+
 - Reporting security vulnerabilities responsibly
 - Suggesting new detection modules
 - Submitting pull requests
